@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -12,12 +13,16 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fishercreative.fishlogger.ui.viewmodels.LoggedCatchesViewModel
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoggedCatchesScreen(
     viewModel: LoggedCatchesViewModel = viewModel()
 ) {
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MM/dd/yyyy") }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -69,16 +74,23 @@ fun LoggedCatchesScreen(
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
                                         text = catch.species,
                                         style = MaterialTheme.typography.titleMedium
                                     )
-                                    Text(
-                                        text = catch.date.format(DateTimeFormatter.ofPattern("MM/dd/yyyy")),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            text = catch.date.format(dateFormatter),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = catch.time.format(timeFormatter),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
                                 }
                                 
                                 Spacer(modifier = Modifier.height(8.dp))

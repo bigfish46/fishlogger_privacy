@@ -1,34 +1,37 @@
 package com.fishercreative.fishlogger.ui.viewmodels
 
+import android.app.Application
 import android.location.Location
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.fishercreative.fishlogger.FishLoggerApp
 import com.fishercreative.fishlogger.data.models.Catch
 import com.fishercreative.fishlogger.data.models.CloudCover
 import com.fishercreative.fishlogger.data.models.WaterTurbidity
-import com.google.firebase.firestore.GeoPoint
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
-sealed class SaveResult {
-    object Success : SaveResult()
-    data class Error(val message: String) : Error()
+sealed interface SaveResult {
+    object Success : SaveResult
+    data class Error(val message: String) : SaveResult
 }
 
-class NewCatchViewModel : ViewModel() {
-    private val db = Firebase.firestore
+class NewCatchViewModel(application: Application) : AndroidViewModel(application) {
+    private val TAG = "NewCatchViewModel"
+    private val catchDao = FishLoggerApp.database.catchDao()
     
-    private val _saveResult = MutableSharedFlow<SaveResult>()
+    private val _saveResult = MutableSharedFlow<SaveResult>(
+        replay = 1,
+        extraBufferCapacity = 1
+    )
     val saveResult = _saveResult.asSharedFlow()
     
     var date by mutableStateOf(LocalDate.now())
@@ -80,37 +83,60 @@ class NewCatchViewModel : ViewModel() {
         private set
 
     fun saveCatch() {
-        viewModelScope.launch {
-            try {
-                val catch = Catch.create(
-                    id = UUID.randomUUID().toString(),
-                    date = date,
-                    time = time,
-                    species = species,
-                    lengthInches = lengthInches,
-                    weightPounds = weightPounds,
-                    weightOunces = weightOunces,
-                    temperature = temperature,
-                    cloudCover = cloudCover,
-                    location = location?.let { GeoPoint(it.latitude, it.longitude) },
-                    waterBody = waterBody,
-                    baitType = baitType,
-                    baitColor = baitColor,
-                    waterTurbidity = waterTurbidity,
-                    waterTemperature = waterTemperature,
-                    waterDepth = waterDepth,
-                    fishingDepth = fishingDepth
-                )
-                
-                db.collection("catches")
-                    .document(catch.id)
-                    .set(catch)
-                    .await()
-                
-                resetForm()
-                _saveResult.emit(SaveResult.Success)
-            } catch (e: Exception) {
-                _saveResult.emit(SaveResult.Error("Failed to save catch: ${e.message}"))
+        Log.d(TAG, "saveCatch() called")
+        
+        if (species.isBlank()) {
+            Log.w(TAG, "Cannot save: Species is blank")
+            viewModelScope.launch {
+                _saveResult.tryEmit(SaveResult.Error("Please select a species"))
+            }
+            return
+        }
+
+        val catchId = UUID.randomUUID().toString()
+        Log.d(TAG, "Creating catch object with ID: $catchId, species: $species")
+        
+        try {
+            val fishCatch = Catch(
+                id = catchId,
+                date = date,
+                time = time,
+                species = species,
+                lengthInches = lengthInches,
+                weightPounds = weightPounds,
+                weightOunces = weightOunces,
+                temperature = temperature,
+                cloudCover = cloudCover,
+                latitude = location?.latitude,
+                longitude = location?.longitude,
+                waterBody = waterBody,
+                baitType = baitType,
+                baitColor = baitColor,
+                waterTurbidity = waterTurbidity,
+                waterTemperature = waterTemperature,
+                waterDepth = waterDepth,
+                fishingDepth = fishingDepth
+            )
+            
+            Log.d(TAG, "Catch data prepared, saving to local database...")
+            
+            viewModelScope.launch {
+                try {
+                    catchDao.insertCatch(fishCatch)
+                    Log.d(TAG, "Local save successful")
+                    _saveResult.tryEmit(SaveResult.Success)
+                    resetForm()
+                } catch (e: Exception) {
+                    val errorMsg = "Failed to save catch: ${e.message}"
+                    Log.e(TAG, errorMsg, e)
+                    _saveResult.tryEmit(SaveResult.Error(errorMsg))
+                }
+            }
+        } catch (e: Exception) {
+            val errorMsg = "Error preparing save operation: ${e.message}"
+            Log.e(TAG, errorMsg, e)
+            viewModelScope.launch {
+                _saveResult.tryEmit(SaveResult.Error(errorMsg))
             }
         }
     }
@@ -180,7 +206,7 @@ class NewCatchViewModel : ViewModel() {
         fishingDepth = depth
     }
 
-    fun resetForm() {
+    private fun resetForm() {
         date = LocalDate.now()
         time = LocalTime.now()
         species = ""

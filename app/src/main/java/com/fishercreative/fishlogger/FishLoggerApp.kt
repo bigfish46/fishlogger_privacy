@@ -1,16 +1,19 @@
 package com.fishercreative.fishlogger
 
 import android.app.Application
-import com.google.firebase.FirebaseApp
-import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.fishercreative.fishlogger.data.db.AppDatabase
 
 class FishLoggerApp : Application() {
+    
+    companion object {
+        lateinit var database: AppDatabase
+            private set
+    }
+
     override fun onCreate() {
         super.onCreate()
-        // Initialize Firebase
-        FirebaseApp.initializeApp(this)
-
-        // Enable Crashlytics in Debug mode
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
+        
+        // Initialize Room database using singleton pattern
+        database = AppDatabase.getDatabase(this)
     }
 } 

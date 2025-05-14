@@ -1,19 +1,19 @@
 package com.fishercreative.fishlogger.ui.viewmodels
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.fishercreative.fishlogger.FishLoggerApp
 import com.fishercreative.fishlogger.data.models.Catch
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
-class LoggedCatchesViewModel : ViewModel() {
-    private val db = Firebase.firestore
+class LoggedCatchesViewModel(application: Application) : AndroidViewModel(application) {
+    private val catchDao = FishLoggerApp.database.catchDao()
     
     var catches by mutableStateOf<List<Catch>>(emptyList())
         private set
@@ -30,22 +30,16 @@ class LoggedCatchesViewModel : ViewModel() {
     
     fun loadCatches() {
         viewModelScope.launch {
-            isLoading = true
-            error = null
-            try {
-                val snapshot = db.collection("catches")
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .get()
-                    .await()
-                
-                catches = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Catch::class.java)
+            catchDao.getAllCatches()
+                .onStart { isLoading = true }
+                .catch { e -> 
+                    error = "Failed to load catches: ${e.message}"
+                    isLoading = false
                 }
-            } catch (e: Exception) {
-                error = "Failed to load catches: ${e.message}"
-            } finally {
-                isLoading = false
-            }
+                .collect { catchList ->
+                    catches = catchList.sortedByDescending { it.createdAt }
+                    isLoading = false
+                }
         }
     }
 } 

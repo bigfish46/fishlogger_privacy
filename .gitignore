@@ -13,3 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Exclude generated files
+app/build/
+.idea/deploymentTargetDropDown.xml
+
+# Keep Room schema files
+!app/schemas/

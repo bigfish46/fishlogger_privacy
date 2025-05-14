@@ -26,7 +26,22 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
 import com.fishercreative.fishlogger.ui.navigation.Screen
+import com.fishercreative.fishlogger.ui.viewmodels.SaveResult
 import kotlinx.coroutines.flow.collectLatest
+import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import android.util.Log
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,11 +52,15 @@ fun NewCatchScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    var isSaving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.saveResult.collectLatest { result ->
+            isSaving = false
             when (result) {
-                is SaveResult.Success -> {
+                SaveResult.Success -> {
+                    Toast.makeText(context, "Catch saved successfully!", Toast.LENGTH_SHORT).show()
                     navController.navigate(Screen.LoggedCatches.route) {
                         popUpTo(Screen.LoggedCatches.route) {
                             saveState = true
@@ -51,7 +70,7 @@ fun NewCatchScreen(
                     }
                 }
                 is SaveResult.Error -> {
-                    // TODO: Show error message
+                    Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -416,10 +435,34 @@ fun NewCatchScreen(
         }
 
         Button(
-            onClick = { viewModel.saveCatch() },
-            modifier = Modifier.fillMaxWidth()
+            onClick = { 
+                Log.d("NewCatchScreen", "Save button clicked, isSaving=$isSaving")
+                if (!isSaving) {
+                    Log.d("NewCatchScreen", "Starting save operation")
+                    isSaving = true
+                    Toast.makeText(context, "Saving catch...", Toast.LENGTH_SHORT).show()
+                    viewModel.saveCatch()
+                } else {
+                    Log.d("NewCatchScreen", "Save already in progress")
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving && viewModel.species.isNotBlank() // Basic validation
         ) {
-            Text("Save Catch")
+            if (isSaving) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text("Saving...")
+                }
+            } else {
+                Text("Save Catch")
+            }
         }
     }
 }
