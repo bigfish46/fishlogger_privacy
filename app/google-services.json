@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "340540202883",
+    "project_id": "fish-logger-8dece",
+    "storage_bucket": "fish-logger-8dece.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:340540202883:android:487915e4e1f79050c620b6",
+        "android_client_info": {
+          "package_name": "com.fishercreative.fishlogger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqCJiOQD8zfOnh1KbrEhHd2qZWGytBnuA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

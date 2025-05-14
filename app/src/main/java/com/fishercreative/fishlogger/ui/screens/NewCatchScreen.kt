@@ -1,0 +1,467 @@
+package com.fishercreative.fishlogger.ui.screens
+
+import android.Manifest
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.fishercreative.fishlogger.data.Constants
+import com.fishercreative.fishlogger.data.models.CloudCover
+import com.fishercreative.fishlogger.data.models.WaterTurbidity
+import com.fishercreative.fishlogger.ui.viewmodels.NewCatchViewModel
+import java.time.format.DateTimeFormatter
+import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavController
+import com.fishercreative.fishlogger.ui.navigation.Screen
+import kotlinx.coroutines.flow.collectLatest
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NewCatchScreen(
+    viewModel: NewCatchViewModel,
+    onRequestLocationPermission: () -> Unit,
+    navController: NavController
+) {
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(Unit) {
+        viewModel.saveResult.collectLatest { result ->
+            when (result) {
+                is SaveResult.Success -> {
+                    navController.navigate(Screen.LoggedCatches.route) {
+                        popUpTo(Screen.LoggedCatches.route) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+                is SaveResult.Error -> {
+                    // TODO: Show error message
+                }
+            }
+        }
+    }
+
+    // State for dropdowns
+    var speciesExpanded by remember { mutableStateOf(false) }
+    var cloudCoverExpanded by remember { mutableStateOf(false) }
+    var baitTypeExpanded by remember { mutableStateOf(false) }
+    var baitColorExpanded by remember { mutableStateOf(false) }
+    var turbidityExpanded by remember { mutableStateOf(false) }
+
+    // Filtered lists
+    val filteredSpecies = remember(viewModel.species) {
+        if (viewModel.species.isBlank()) {
+            Constants.COMMON_FISH_SPECIES
+        } else {
+            Constants.COMMON_FISH_SPECIES.filter {
+                it.contains(viewModel.species, ignoreCase = true)
+            }
+        }
+    }
+
+    val filteredBaitTypes = remember(viewModel.baitType) {
+        if (viewModel.baitType.isBlank()) {
+            Constants.BAIT_TYPES
+        } else {
+            Constants.BAIT_TYPES.filter {
+                it.contains(viewModel.baitType, ignoreCase = true)
+            }
+        }
+    }
+
+    val filteredBaitColors = remember(viewModel.baitColor) {
+        if (viewModel.baitColor.isBlank()) {
+            Constants.BAIT_COLORS
+        } else {
+            Constants.BAIT_COLORS.filter {
+                it.contains(viewModel.baitColor, ignoreCase = true)
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Date Picker
+        OutlinedTextField(
+            value = viewModel.date.format(DateTimeFormatter.ISO_LOCAL_DATE),
+            onValueChange = { },
+            label = { Text("Date") },
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = {
+                    showDatePicker(context, viewModel.date) { newDate ->
+                        viewModel.updateDate(newDate)
+                    }
+                }) {
+                    Text("📅")
+                }
+            }
+        )
+
+        // Time Picker
+        OutlinedTextField(
+            value = viewModel.time.format(DateTimeFormatter.ofPattern("HH:mm")),
+            onValueChange = { },
+            label = { Text("Time") },
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = {
+                    showTimePicker(context, viewModel.time) { newTime ->
+                        viewModel.updateTime(newTime)
+                    }
+                }) {
+                    Text("🕒")
+                }
+            }
+        )
+
+        // Species Autocomplete with Dropdown
+        ExposedDropdownMenuBox(
+            expanded = speciesExpanded,
+            onExpandedChange = { speciesExpanded = it }
+        ) {
+            OutlinedTextField(
+                value = viewModel.species,
+                onValueChange = { 
+                    viewModel.updateSpecies(it)
+                    speciesExpanded = true
+                },
+                label = { Text("Species") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = speciesExpanded) }
+            )
+            ExposedDropdownMenu(
+                expanded = speciesExpanded,
+                onDismissRequest = { speciesExpanded = false }
+            ) {
+                filteredSpecies.forEach { species ->
+                    DropdownMenuItem(
+                        text = { Text(species) },
+                        onClick = {
+                            viewModel.updateSpecies(species)
+                            speciesExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // Length and Weight
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = if (viewModel.lengthInches > 0) viewModel.lengthInches.toString() else "",
+                onValueChange = { value ->
+                    value.toIntOrNull()?.let { viewModel.updateLengthInches(it) }
+                },
+                label = { Text("Length (inches)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+
+            OutlinedTextField(
+                value = if (viewModel.weightPounds > 0) viewModel.weightPounds.toString() else "",
+                onValueChange = { value ->
+                    value.toIntOrNull()?.let { viewModel.updateWeightPounds(it) }
+                },
+                label = { Text("Weight (lbs)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+
+            OutlinedTextField(
+                value = if (viewModel.weightOunces > 0) viewModel.weightOunces.toString() else "",
+                onValueChange = { value ->
+                    value.toIntOrNull()?.let { viewModel.updateWeightOunces(it) }
+                },
+                label = { Text("Weight (oz)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Weather with Cloud Cover Dropdown
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = if (viewModel.temperature > 0) viewModel.temperature.toString() else "",
+                onValueChange = { value ->
+                    value.toDoubleOrNull()?.let { viewModel.updateTemperature(it) }
+                },
+                label = { Text("Temperature (°F)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f)
+            )
+
+            ExposedDropdownMenuBox(
+                expanded = cloudCoverExpanded,
+                onExpandedChange = { cloudCoverExpanded = it },
+                modifier = Modifier.weight(1f)
+            ) {
+                OutlinedTextField(
+                    value = viewModel.cloudCover.name.replace("_", " "),
+                    onValueChange = { },
+                    label = { Text("Cloud Cover") },
+                    readOnly = true,
+                    modifier = Modifier.menuAnchor(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cloudCoverExpanded) }
+                )
+                ExposedDropdownMenu(
+                    expanded = cloudCoverExpanded,
+                    onDismissRequest = { cloudCoverExpanded = false }
+                ) {
+                    CloudCover.values().forEach { cloudCover ->
+                        DropdownMenuItem(
+                            text = { Text(cloudCover.name.replace("_", " ")) },
+                            onClick = {
+                                viewModel.updateCloudCover(cloudCover)
+                                cloudCoverExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Location
+        Button(
+            onClick = {
+                if (hasLocationPermission(context)) {
+                    // TODO: Get location
+                } else {
+                    onRequestLocationPermission()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (viewModel.location != null) "Update Location" else "Get Location")
+        }
+
+        if (viewModel.location != null) {
+            Text(
+                "Lat: ${viewModel.location?.latitude}, Long: ${viewModel.location?.longitude}",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        // Water Body
+        OutlinedTextField(
+            value = viewModel.waterBody,
+            onValueChange = { viewModel.updateWaterBody(it) },
+            label = { Text("Water Body") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Bait Type and Color Dropdowns
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ExposedDropdownMenuBox(
+                expanded = baitTypeExpanded,
+                onExpandedChange = { baitTypeExpanded = it },
+                modifier = Modifier.weight(1f)
+            ) {
+                OutlinedTextField(
+                    value = viewModel.baitType,
+                    onValueChange = { 
+                        viewModel.updateBaitType(it)
+                        baitTypeExpanded = true
+                    },
+                    label = { Text("Bait Type") },
+                    modifier = Modifier.menuAnchor(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = baitTypeExpanded) }
+                )
+                ExposedDropdownMenu(
+                    expanded = baitTypeExpanded,
+                    onDismissRequest = { baitTypeExpanded = false }
+                ) {
+                    filteredBaitTypes.forEach { baitType ->
+                        DropdownMenuItem(
+                            text = { Text(baitType) },
+                            onClick = {
+                                viewModel.updateBaitType(baitType)
+                                baitTypeExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = baitColorExpanded,
+                onExpandedChange = { baitColorExpanded = it },
+                modifier = Modifier.weight(1f)
+            ) {
+                OutlinedTextField(
+                    value = viewModel.baitColor,
+                    onValueChange = { 
+                        viewModel.updateBaitColor(it)
+                        baitColorExpanded = true
+                    },
+                    label = { Text("Bait Color") },
+                    modifier = Modifier.menuAnchor(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = baitColorExpanded) }
+                )
+                ExposedDropdownMenu(
+                    expanded = baitColorExpanded,
+                    onDismissRequest = { baitColorExpanded = false }
+                ) {
+                    filteredBaitColors.forEach { color ->
+                        DropdownMenuItem(
+                            text = { Text(color) },
+                            onClick = {
+                                viewModel.updateBaitColor(color)
+                                baitColorExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Water Turbidity Dropdown
+        ExposedDropdownMenuBox(
+            expanded = turbidityExpanded,
+            onExpandedChange = { turbidityExpanded = it }
+        ) {
+            OutlinedTextField(
+                value = viewModel.waterTurbidity.name.replace("_", " "),
+                onValueChange = { },
+                label = { Text("Water Turbidity") },
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = turbidityExpanded) }
+            )
+            ExposedDropdownMenu(
+                expanded = turbidityExpanded,
+                onDismissRequest = { turbidityExpanded = false }
+            ) {
+                WaterTurbidity.values().forEach { turbidity ->
+                    DropdownMenuItem(
+                        text = { Text(turbidity.name.replace("_", " ")) },
+                        onClick = {
+                            viewModel.updateWaterTurbidity(turbidity)
+                            turbidityExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = if (viewModel.waterTemperature > 0) viewModel.waterTemperature.toString() else "",
+                onValueChange = { value ->
+                    value.toDoubleOrNull()?.let { viewModel.updateWaterTemperature(it) }
+                },
+                label = { Text("Water Temp (°F)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f)
+            )
+
+            OutlinedTextField(
+                value = if (viewModel.waterDepth > 0) viewModel.waterDepth.toString() else "",
+                onValueChange = { value ->
+                    value.toDoubleOrNull()?.let { viewModel.updateWaterDepth(it) }
+                },
+                label = { Text("Water Depth (ft)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f)
+            )
+
+            OutlinedTextField(
+                value = if (viewModel.fishingDepth > 0) viewModel.fishingDepth.toString() else "",
+                onValueChange = { value ->
+                    value.toDoubleOrNull()?.let { viewModel.updateFishingDepth(it) }
+                },
+                label = { Text("Fishing Depth (ft)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Button(
+            onClick = { viewModel.saveCatch() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Save Catch")
+        }
+    }
+}
+
+private fun hasLocationPermission(context: Context): Boolean {
+    return ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+}
+
+private fun showDatePicker(
+    context: Context,
+    initialDate: java.time.LocalDate,
+    onDateSelected: (java.time.LocalDate) -> Unit
+) {
+    val calendar = java.util.Calendar.getInstance()
+    calendar.set(initialDate.year, initialDate.monthValue - 1, initialDate.dayOfMonth)
+
+    DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            onDateSelected(java.time.LocalDate.of(year, month + 1, dayOfMonth))
+        },
+        calendar.get(java.util.Calendar.YEAR),
+        calendar.get(java.util.Calendar.MONTH),
+        calendar.get(java.util.Calendar.DAY_OF_MONTH)
+    ).show()
+}
+
+private fun showTimePicker(
+    context: Context,
+    initialTime: java.time.LocalTime,
+    onTimeSelected: (java.time.LocalTime) -> Unit
+) {
+    TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            onTimeSelected(java.time.LocalTime.of(hourOfDay, minute))
+        },
+        initialTime.hour,
+        initialTime.minute,
+        true
+    ).show()
+} 
