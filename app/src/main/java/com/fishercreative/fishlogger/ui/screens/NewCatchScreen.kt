@@ -55,6 +55,11 @@ fun NewCatchScreen(
     var isSaving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    // Call onScreenShown when the screen is shown
+    LaunchedEffect(Unit) {
+        viewModel.onScreenShown()
+    }
+
     LaunchedEffect(Unit) {
         viewModel.saveResult.collectLatest { result ->
             isSaving = false
@@ -275,7 +280,19 @@ fun NewCatchScreen(
         Button(
             onClick = {
                 if (hasLocationPermission(context)) {
-                    // TODO: Get location
+                    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                    try {
+                        val lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                            ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                        
+                        lastKnownLocation?.let { location ->
+                            viewModel.updateLocation(location)
+                        } ?: run {
+                            Toast.makeText(context, "Unable to get location. Please try again.", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: SecurityException) {
+                        Toast.makeText(context, "Location permission denied", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
                     onRequestLocationPermission()
                 }
@@ -287,10 +304,18 @@ fun NewCatchScreen(
 
         if (viewModel.location != null) {
             Text(
-                "Lat: ${viewModel.location?.latitude}, Long: ${viewModel.location?.longitude}",
+                "Lat: ${String.format("%.6f", viewModel.location?.latitude)}, Long: ${String.format("%.6f", viewModel.location?.longitude)}",
                 style = MaterialTheme.typography.bodySmall
             )
         }
+
+        // Nearest City
+        OutlinedTextField(
+            value = viewModel.nearestCity,
+            onValueChange = { viewModel.updateNearestCity(it) },
+            label = { Text("Nearest City") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         // Water Body
         OutlinedTextField(

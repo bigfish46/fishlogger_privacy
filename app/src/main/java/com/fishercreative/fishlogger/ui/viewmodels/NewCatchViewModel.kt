@@ -2,6 +2,7 @@ package com.fishercreative.fishlogger.ui.viewmodels
 
 import android.app.Application
 import android.location.Location
+import android.location.Geocoder
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,10 +29,7 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     private val TAG = "NewCatchViewModel"
     private val catchDao = FishLoggerApp.database.catchDao()
     
-    private val _saveResult = MutableSharedFlow<SaveResult>(
-        replay = 1,
-        extraBufferCapacity = 1
-    )
+    private val _saveResult = MutableSharedFlow<SaveResult>()
     val saveResult = _saveResult.asSharedFlow()
     
     var date by mutableStateOf(LocalDate.now())
@@ -61,6 +59,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     var location by mutableStateOf<Location?>(null)
         private set
     
+    var nearestCity by mutableStateOf("")
+        private set
+    
     var waterBody by mutableStateOf("")
         private set
     
@@ -82,13 +83,17 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     var fishingDepth by mutableStateOf(0.0)
         private set
 
+    fun onScreenShown() {
+        resetForm()
+    }
+
     fun saveCatch() {
         Log.d(TAG, "saveCatch() called")
         
         if (species.isBlank()) {
             Log.w(TAG, "Cannot save: Species is blank")
             viewModelScope.launch {
-                _saveResult.tryEmit(SaveResult.Error("Please select a species"))
+                _saveResult.emit(SaveResult.Error("Please select a species"))
             }
             return
         }
@@ -109,6 +114,7 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                 cloudCover = cloudCover,
                 latitude = location?.latitude,
                 longitude = location?.longitude,
+                nearestCity = nearestCity,
                 waterBody = waterBody,
                 baitType = baitType,
                 baitColor = baitColor,
@@ -124,19 +130,18 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                 try {
                     catchDao.insertCatch(fishCatch)
                     Log.d(TAG, "Local save successful")
-                    _saveResult.tryEmit(SaveResult.Success)
-                    resetForm()
+                    _saveResult.emit(SaveResult.Success)
                 } catch (e: Exception) {
                     val errorMsg = "Failed to save catch: ${e.message}"
                     Log.e(TAG, errorMsg, e)
-                    _saveResult.tryEmit(SaveResult.Error(errorMsg))
+                    _saveResult.emit(SaveResult.Error(errorMsg))
                 }
             }
         } catch (e: Exception) {
             val errorMsg = "Error preparing save operation: ${e.message}"
             Log.e(TAG, errorMsg, e)
             viewModelScope.launch {
-                _saveResult.tryEmit(SaveResult.Error(errorMsg))
+                _saveResult.emit(SaveResult.Error(errorMsg))
             }
         }
     }
@@ -176,6 +181,31 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
 
     fun updateLocation(newLocation: Location) {
         location = newLocation
+        // Update nearest city using Geocoder
+        viewModelScope.launch {
+            try {
+                val geocoder = Geocoder(getApplication())
+                val addresses = geocoder.getFromLocation(newLocation.latitude, newLocation.longitude, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val address = addresses[0]
+                    val city = address.locality ?: address.subAdminArea
+                    val state = address.adminArea
+                    nearestCity = when {
+                        city != null && state != null -> "$city, $state"
+                        city != null -> city
+                        state != null -> state
+                        else -> ""
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting nearest city", e)
+                nearestCity = ""
+            }
+        }
+    }
+
+    fun updateNearestCity(city: String) {
+        nearestCity = city
     }
 
     fun updateWaterBody(body: String) {
@@ -216,6 +246,7 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         temperature = 0.0
         cloudCover = CloudCover.CLEAR
         location = null
+        nearestCity = ""
         waterBody = ""
         baitType = ""
         baitColor = ""

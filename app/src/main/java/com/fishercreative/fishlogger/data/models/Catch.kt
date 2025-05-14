@@ -19,6 +19,7 @@ data class Catch(
     var cloudCover: CloudCover = CloudCover.CLEAR,
     var latitude: Double? = null,
     var longitude: Double? = null,
+    var nearestCity: String = "",
     var waterBody: String = "",
     var baitType: String = "",
     var baitColor: String = "",
