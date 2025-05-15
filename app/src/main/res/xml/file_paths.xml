@@ -3,4 +3,13 @@
     <external-path
         name="downloads"
         path="Download" />
+    <external-path
+        name="dcim"
+        path="DCIM/FishLogger" />
+    <external-files-path
+        name="photos"
+        path="Pictures" />
+    <cache-path
+        name="cached_photos"
+        path="camera_photos/" />
 </paths> 

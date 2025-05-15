@@ -129,6 +129,9 @@ dependencies {
     // Accompanist
     implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

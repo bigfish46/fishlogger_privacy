@@ -6,6 +6,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +28,7 @@ import com.fishercreative.fishlogger.data.models.CloudCover
 import com.fishercreative.fishlogger.data.models.WaterTurbidity
 import com.fishercreative.fishlogger.data.models.Catch
 import com.fishercreative.fishlogger.data.models.RetrievalMethod
+import com.fishercreative.fishlogger.ui.components.PhotoCapture
 import com.fishercreative.fishlogger.ui.viewmodels.NewCatchViewModel
 import com.fishercreative.fishlogger.ui.viewmodels.StateValidationResult
 import java.time.format.DateTimeFormatter
@@ -566,6 +568,18 @@ fun NewCatchScreen(
                 singleLine = true
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Photo Capture
+        PhotoCapture(
+            photoUri = viewModel.photoUri?.let { Uri.parse(it) },
+            onPhotoTaken = { uri -> viewModel.updatePhotoUri(uri.toString()) },
+            onPhotoDeleted = { viewModel.updatePhotoUri(null) },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = { 

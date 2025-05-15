@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import com.fishercreative.fishlogger.data.models.Catch
 import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import java.time.format.DateTimeFormatter
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun CatchCard(
@@ -72,6 +74,20 @@ fun CatchCard(
                         )
                     )
                 }
+            }
+
+            // Photo if exists
+            catch.photoUri?.let { uri ->
+                Spacer(modifier = Modifier.height(8.dp))
+                AsyncImage(
+                    model = uri,
+                    contentDescription = "Catch photo",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
             }
 
             // Size Information

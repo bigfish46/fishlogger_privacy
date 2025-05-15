@@ -29,6 +29,7 @@ data class Catch(
     var waterDepth: Double = 0.0,
     var fishingDepth: Double = 0.0,
     var retrievalMethod: RetrievalMethod = RetrievalMethod.OTHER,
+    var photoUri: String? = null,
     var createdAt: Long = System.currentTimeMillis(),
     var needsSync: Boolean = true
 )

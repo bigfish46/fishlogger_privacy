@@ -96,6 +96,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     
     var retrievalMethod by mutableStateOf(RetrievalMethod.OTHER)
         private set
+        
+    var photoUri by mutableStateOf<String?>(null)
+        private set
 
     fun onScreenShown() {
         resetForm()
@@ -212,6 +215,10 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     fun updateRetrievalMethod(value: RetrievalMethod) {
         retrievalMethod = value
     }
+    
+    fun updatePhotoUri(value: String?) {
+        photoUri = value
+    }
 
     fun saveCatch() {
         viewModelScope.launch {
@@ -236,7 +243,8 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                     waterTemperature = waterTemperature,
                     waterDepth = waterDepth,
                     fishingDepth = fishingDepth,
-                    retrievalMethod = retrievalMethod
+                    retrievalMethod = retrievalMethod,
+                    photoUri = photoUri
                 )
                 
                 catchDao.insertCatch(catch)
@@ -271,6 +279,7 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         waterDepth = 0.0
         fishingDepth = 0.0
         retrievalMethod = RetrievalMethod.OTHER
+        photoUri = null
     }
 
     private fun updateNearestCityFromLocation(location: Location) {
