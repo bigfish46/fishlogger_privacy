@@ -1,8 +1,8 @@
 package com.fishercreative.fishlogger.ui.viewmodels
 
 import android.app.Application
-import android.location.Location
 import android.location.Geocoder
+import android.location.Location
 import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -13,19 +13,15 @@ import androidx.lifecycle.viewModelScope
 import com.fishercreative.fishlogger.FishLoggerApp
 import com.fishercreative.fishlogger.data.models.Catch
 import com.fishercreative.fishlogger.data.models.CloudCover
-import com.fishercreative.fishlogger.data.models.WaterTurbidity
 import com.fishercreative.fishlogger.data.models.RetrievalMethod
+import com.fishercreative.fishlogger.data.models.WaterTurbidity
+import com.fishercreative.fishlogger.utils.StateUtils
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
-
-sealed interface SaveResult {
-    object Success : SaveResult
-    data class Error(val message: String) : SaveResult
-}
 
 class NewCatchViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "NewCatchViewModel"
@@ -61,6 +57,12 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     var location by mutableStateOf<Location?>(null)
         private set
     
+    var city by mutableStateOf("")
+        private set
+        
+    var state by mutableStateOf("")
+        private set
+    
     var nearestCity by mutableStateOf("")
         private set
     
@@ -92,139 +94,123 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         resetForm()
     }
 
+    fun updateDate(value: LocalDate) {
+        date = value
+    }
+
+    fun updateTime(value: LocalTime) {
+        time = value
+    }
+
+    fun updateSpecies(value: String) {
+        species = value
+    }
+
+    fun updateLengthInches(value: Int) {
+        lengthInches = value
+    }
+
+    fun updateWeightPounds(value: Int) {
+        weightPounds = value
+    }
+
+    fun updateWeightOunces(value: Int) {
+        weightOunces = value
+    }
+
+    fun updateTemperature(value: Double) {
+        temperature = value
+    }
+
+    fun updateCloudCover(value: CloudCover) {
+        cloudCover = value
+    }
+
+    fun updateLocation(value: Location) {
+        location = value
+        updateNearestCityFromLocation(value)
+    }
+
+    fun updateCity(value: String) {
+        city = value
+        updateNearestCity()
+    }
+    
+    fun updateState(value: String) {
+        state = value
+        updateNearestCity()
+    }
+    
+    private fun updateNearestCity() {
+        nearestCity = StateUtils.formatCityState(city, state)
+    }
+
+    fun updateWaterBody(value: String) {
+        waterBody = value
+    }
+
+    fun updateBaitType(value: String) {
+        baitType = value
+    }
+
+    fun updateBaitColor(value: String) {
+        baitColor = value
+    }
+
+    fun updateWaterTurbidity(value: WaterTurbidity) {
+        waterTurbidity = value
+    }
+
+    fun updateWaterTemperature(value: Double) {
+        waterTemperature = value
+    }
+
+    fun updateWaterDepth(value: Double) {
+        waterDepth = value
+    }
+
+    fun updateFishingDepth(value: Double) {
+        fishingDepth = value
+    }
+    
+    fun updateRetrievalMethod(value: RetrievalMethod) {
+        retrievalMethod = value
+    }
+
     fun saveCatch() {
-        Log.d(TAG, "saveCatch() called")
-        
-        if (species.isBlank()) {
-            Log.w(TAG, "Cannot save: Species is blank")
-            viewModelScope.launch {
-                _saveResult.emit(SaveResult.Error("Please select a species"))
-            }
-            return
-        }
-
-        val catchId = UUID.randomUUID().toString()
-        Log.d(TAG, "Creating catch object with ID: $catchId, species: $species")
-        
-        try {
-            val fishCatch = Catch(
-                id = catchId,
-                date = date,
-                time = time,
-                species = species,
-                lengthInches = lengthInches,
-                weightPounds = weightPounds,
-                weightOunces = weightOunces,
-                temperature = temperature,
-                cloudCover = cloudCover,
-                latitude = location?.latitude,
-                longitude = location?.longitude,
-                nearestCity = nearestCity,
-                waterBody = waterBody,
-                baitType = baitType,
-                baitColor = baitColor,
-                waterTurbidity = waterTurbidity,
-                waterTemperature = waterTemperature,
-                waterDepth = waterDepth,
-                fishingDepth = fishingDepth,
-                retrievalMethod = retrievalMethod
-            )
-            
-            Log.d(TAG, "Catch data prepared, saving to local database...")
-            
-            viewModelScope.launch {
-                try {
-                    catchDao.insertCatch(fishCatch)
-                    Log.d(TAG, "Local save successful")
-                    _saveResult.emit(SaveResult.Success)
-                } catch (e: Exception) {
-                    val errorMsg = "Failed to save catch: ${e.message}"
-                    Log.e(TAG, errorMsg, e)
-                    _saveResult.emit(SaveResult.Error(errorMsg))
-                }
-            }
-        } catch (e: Exception) {
-            val errorMsg = "Error preparing save operation: ${e.message}"
-            Log.e(TAG, errorMsg, e)
-            viewModelScope.launch {
-                _saveResult.emit(SaveResult.Error(errorMsg))
+        viewModelScope.launch {
+            try {
+                val catch = Catch(
+                    id = UUID.randomUUID().toString(),
+                    date = date,
+                    time = time,
+                    species = species,
+                    lengthInches = lengthInches,
+                    weightPounds = weightPounds,
+                    weightOunces = weightOunces,
+                    temperature = temperature,
+                    cloudCover = cloudCover,
+                    latitude = location?.latitude,
+                    longitude = location?.longitude,
+                    nearestCity = nearestCity,
+                    waterBody = waterBody,
+                    baitType = baitType,
+                    baitColor = baitColor,
+                    waterTurbidity = waterTurbidity,
+                    waterTemperature = waterTemperature,
+                    waterDepth = waterDepth,
+                    fishingDepth = fishingDepth,
+                    retrievalMethod = retrievalMethod
+                )
+                
+                catchDao.insertCatch(catch)
+                _saveResult.emit(SaveResult.Success)
+                resetForm()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving catch", e)
+                _saveResult.emit(SaveResult.Error("Failed to save catch: ${e.message}"))
             }
         }
-    }
-
-    // Update functions
-    fun updateDate(newDate: LocalDate) {
-        date = newDate
-    }
-
-    fun updateTime(newTime: LocalTime) {
-        time = newTime
-    }
-
-    fun updateSpecies(newSpecies: String) {
-        species = newSpecies
-    }
-
-    fun updateLengthInches(length: Int) {
-        lengthInches = length
-    }
-
-    fun updateWeightPounds(pounds: Int) {
-        weightPounds = pounds
-    }
-
-    fun updateWeightOunces(ounces: Int) {
-        weightOunces = ounces
-    }
-
-    fun updateTemperature(temp: Double) {
-        temperature = temp
-    }
-
-    fun updateCloudCover(cover: CloudCover) {
-        cloudCover = cover
-    }
-
-    fun updateLocation(newLocation: Location) {
-        location = newLocation
-        // Update nearest city using Geocoder
-        updateNearestCityFromLocation(newLocation)
-    }
-
-    fun updateNearestCity(city: String) {
-        nearestCity = city
-    }
-
-    fun updateWaterBody(body: String) {
-        waterBody = body
-    }
-
-    fun updateBaitType(type: String) {
-        baitType = type
-    }
-
-    fun updateBaitColor(color: String) {
-        baitColor = color
-    }
-
-    fun updateWaterTurbidity(turbidity: WaterTurbidity) {
-        waterTurbidity = turbidity
-    }
-
-    fun updateWaterTemperature(temp: Double) {
-        waterTemperature = temp
-    }
-
-    fun updateWaterDepth(depth: Double) {
-        waterDepth = depth
-    }
-
-    fun updateFishingDepth(depth: Double) {
-        fishingDepth = depth
-    }
-
-    fun updateRetrievalMethod(method: RetrievalMethod) {
-        retrievalMethod = method
     }
 
     private fun resetForm() {
@@ -237,6 +223,8 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         temperature = 0.0
         cloudCover = CloudCover.CLEAR
         location = null
+        city = ""
+        state = ""
         nearestCity = ""
         waterBody = ""
         baitType = ""
@@ -255,7 +243,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                 geocoder.getFromLocation(location.latitude, location.longitude, 1) { addresses ->
                     if (addresses.isNotEmpty()) {
                         val address = addresses[0]
-                        nearestCity = address.locality ?: address.subAdminArea ?: ""
+                        city = address.locality ?: address.subAdminArea ?: ""
+                        state = address.adminArea ?: ""
+                        updateNearestCity()
                     }
                 }
             } else {
@@ -263,11 +253,18 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                 val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                 if (addresses?.isNotEmpty() == true) {
                     val address = addresses[0]
-                    nearestCity = address.locality ?: address.subAdminArea ?: ""
+                    city = address.locality ?: address.subAdminArea ?: ""
+                    state = address.adminArea ?: ""
+                    updateNearestCity()
                 }
             }
         } catch (e: Exception) {
-            Log.e("NewCatchViewModel", "Error getting location address", e)
+            Log.e(TAG, "Error getting location address", e)
         }
     }
+}
+
+sealed class SaveResult {
+    object Success : SaveResult()
+    data class Error(val message: String) : SaveResult()
 } 

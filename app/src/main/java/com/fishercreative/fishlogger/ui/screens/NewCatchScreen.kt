@@ -330,15 +330,29 @@ fun NewCatchScreen(
             )
         }
 
-        // Nearest City
-        OutlinedTextField(
-            value = viewModel.nearestCity,
-            onValueChange = { viewModel.updateNearestCity(it) },
-            label = { Text("Nearest City") },
+        // City and State
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
-            singleLine = true
-        )
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = viewModel.city,
+                onValueChange = { viewModel.updateCity(it) },
+                label = { Text("City") },
+                modifier = Modifier.weight(2f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
+            )
+            
+            OutlinedTextField(
+                value = viewModel.state,
+                onValueChange = { viewModel.updateState(it) },
+                label = { Text("State") },
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
+            )
+        }
 
         // Water Body
         OutlinedTextField(

@@ -15,6 +15,7 @@ enum class RetrievalMethod {
     FLY_FISHING,
     SHORE_FISHING,
     ICE_FISHING,
+    BOTTOM_SLIDE_SINKER,
     OTHER;
 
     override fun toString(): String {
