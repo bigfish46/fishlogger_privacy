@@ -13,49 +13,50 @@ object Constants {
         "Walleye",
         "Northern Pike",
         "Muskie",
+        "Yellow Perch",
         "Rainbow Trout",
         "Brown Trout",
         "Brook Trout",
-        "Carp"
-        // Add more as needed
+        "Lake Trout",
+        "Carp",
+        "White Bass",
+        "Striped Bass",
+        "Hybrid Striped Bass"
     )
 
     val BAIT_TYPES = listOf(
-        "Spinner Bait",
-        "Minnows (Live)",
-        "Plastic Grub",
         "Plastic Worm",
         "Jig",
         "Crankbait",
+        "Spinnerbait",
         "Topwater",
-        "Spoon",
+        "Live Bait",
+        "Cut Bait",
         "Swimbait",
         "Chatterbait",
-        "Nightcrawlers",
-        "Crawfish (Live)",
-        "Shad",
-        "Buzzbait",
-        "Frog"
-        // Add more as needed
+        "Dropshot",
+        "Texas Rig",
+        "Carolina Rig",
+        "Ned Rig",
+        "Tube",
+        "Grub"
     )
 
     val BAIT_COLORS = listOf(
-        "Natural",  // For live bait
         "Black",
         "Blue",
-        "Green Pumpkin",
-        "Watermelon",
-        "White",
-        "Chartreuse",
-        "Purple",
+        "Green",
         "Red",
-        "Silver",
-        "Gold",
+        "Purple",
+        "White",
         "Yellow",
-        "Brown",
         "Orange",
-        "Pink"
-        // Add more as needed
+        "Brown",
+        "Pink",
+        "Chartreuse",
+        "Natural (Live)",
+        "Salt & Pepper",
+        "Watermelon"
     )
 
     // Permissions
