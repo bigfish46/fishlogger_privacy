@@ -5,6 +5,7 @@ import android.location.Geocoder
 import android.location.Location
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -29,6 +30,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     
     private val _saveResult = MutableSharedFlow<SaveResult>()
     val saveResult = _saveResult.asSharedFlow()
+
+    private val _stateValidationResult = MutableSharedFlow<StateValidationResult>()
+    val stateValidationResult = _stateValidationResult.asSharedFlow()
     
     var date by mutableStateOf(LocalDate.now())
         private set
@@ -61,6 +65,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         private set
         
     var state by mutableStateOf("")
+        private set
+    
+    var stateTemp by mutableStateOf("")
         private set
     
     var nearestCity by mutableStateOf("")
@@ -133,12 +140,41 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
 
     fun updateCity(value: String) {
         city = value
+        if (location != null) {
+            location = null
+        }
         updateNearestCity()
     }
     
     fun updateState(value: String) {
-        state = value
+        stateTemp = value
+        // Clear location if manually entering state
+        if (location != null) {
+            location = null
+        }
+    }
+    
+    fun validateAndUpdateState() {
+        if (stateTemp.isNotBlank() && !StateUtils.isValidStateInput(stateTemp)) {
+            viewModelScope.launch {
+                _stateValidationResult.emit(StateValidationResult.Invalid("Invalid state format. Please use a valid state abbreviation (e.g., TX) or full name."))
+            }
+            return
+        }
+
+        state = if (stateTemp.isNotBlank()) {
+            StateUtils.getStateAbbreviation(stateTemp) ?: stateTemp.uppercase()
+        } else {
+            stateTemp
+        }
+        
         updateNearestCity()
+
+        if (stateTemp.isNotBlank()) {
+            viewModelScope.launch {
+                _stateValidationResult.emit(StateValidationResult.Valid)
+            }
+        }
     }
     
     private fun updateNearestCity() {
@@ -225,6 +261,7 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         location = null
         city = ""
         state = ""
+        stateTemp = ""
         nearestCity = ""
         waterBody = ""
         baitType = ""
@@ -244,8 +281,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                     if (addresses.isNotEmpty()) {
                         val address = addresses[0]
                         city = address.locality ?: address.subAdminArea ?: ""
-                        state = address.adminArea ?: ""
-                        updateNearestCity()
+                        val fullState = address.adminArea ?: ""
+                        stateTemp = StateUtils.getStateAbbreviation(fullState) ?: fullState
+                        validateAndUpdateState()
                     }
                 }
             } else {
@@ -254,8 +292,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                 if (addresses?.isNotEmpty() == true) {
                     val address = addresses[0]
                     city = address.locality ?: address.subAdminArea ?: ""
-                    state = address.adminArea ?: ""
-                    updateNearestCity()
+                    val fullState = address.adminArea ?: ""
+                    stateTemp = StateUtils.getStateAbbreviation(fullState) ?: fullState
+                    validateAndUpdateState()
                 }
             }
         } catch (e: Exception) {
@@ -267,4 +306,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
 sealed class SaveResult {
     object Success : SaveResult()
     data class Error(val message: String) : SaveResult()
+}
+
+sealed class StateValidationResult {
+    object Valid : StateValidationResult()
+    data class Invalid(val message: String) : StateValidationResult()
 } 

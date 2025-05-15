@@ -55,12 +55,30 @@ object StateUtils {
         "DC" to "District of Columbia"
     )
 
+    private val reverseStateMap = stateMap.entries.associate { (abbr, name) -> name.uppercase() to abbr }
+
     fun getFullStateName(abbreviation: String): String {
         return stateMap[abbreviation.uppercase()] ?: abbreviation
     }
 
+    fun getStateAbbreviation(fullName: String): String? {
+        return if (fullName.length == 2) {
+            if (stateMap.containsKey(fullName.uppercase())) fullName.uppercase() else null
+        } else {
+            reverseStateMap[fullName.uppercase()]
+        }
+    }
+
+    fun isValidStateInput(input: String): Boolean {
+        return if (input.length == 2) {
+            stateMap.containsKey(input.uppercase())
+        } else {
+            reverseStateMap.containsKey(input.uppercase())
+        }
+    }
+
     fun formatCityState(city: String, state: String): String {
-        val formattedState = if (state.length == 2) getFullStateName(state) else state
+        val formattedState = getStateAbbreviation(state) ?: state
         return if (city.isNotBlank() && state.isNotBlank()) {
             "$city, $formattedState"
         } else if (city.isNotBlank()) {

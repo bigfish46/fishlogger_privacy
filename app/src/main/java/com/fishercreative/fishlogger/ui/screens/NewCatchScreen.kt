@@ -9,12 +9,16 @@ import android.location.LocationManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -24,6 +28,7 @@ import com.fishercreative.fishlogger.data.models.WaterTurbidity
 import com.fishercreative.fishlogger.data.models.Catch
 import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import com.fishercreative.fishlogger.ui.viewmodels.NewCatchViewModel
+import com.fishercreative.fishlogger.ui.viewmodels.StateValidationResult
 import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
@@ -44,8 +49,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.CoroutineScope
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.ui.platform.LocalFocusManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -344,14 +347,41 @@ fun NewCatchScreen(
                 singleLine = true
             )
             
+            var stateFieldFocused by remember { mutableStateOf(false) }
+            
             OutlinedTextField(
-                value = viewModel.state,
+                value = viewModel.stateTemp,
                 onValueChange = { viewModel.updateState(it) },
-                label = { Text("State") },
-                modifier = Modifier.weight(1f),
-                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                label = { Text("State (e.g., TX)") },
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { focusState: FocusState ->
+                        // Only validate when losing focus and field was previously focused
+                        if (!focusState.isFocused && stateFieldFocused) {
+                            viewModel.validateAndUpdateState()
+                        }
+                        stateFieldFocused = focusState.isFocused
+                    },
+                keyboardActions = KeyboardActions(onDone = { 
+                    viewModel.validateAndUpdateState()
+                    hideKeyboard() 
+                }),
                 singleLine = true
             )
+        }
+
+        // State validation effect
+        LaunchedEffect(Unit) {
+            viewModel.stateValidationResult.collectLatest { result ->
+                when (result) {
+                    is StateValidationResult.Invalid -> {
+                        Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                    }
+                    is StateValidationResult.Valid -> {
+                        // Optionally handle valid state
+                    }
+                }
+            }
         }
 
         // Water Body
