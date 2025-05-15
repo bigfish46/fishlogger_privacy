@@ -2,6 +2,7 @@ package com.fishercreative.fishlogger.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -27,6 +28,7 @@ data class Catch(
     var waterTemperature: Double = 0.0,
     var waterDepth: Double = 0.0,
     var fishingDepth: Double = 0.0,
+    var retrievalMethod: RetrievalMethod = RetrievalMethod.OTHER,
     var createdAt: Long = System.currentTimeMillis(),
     var needsSync: Boolean = true
 )

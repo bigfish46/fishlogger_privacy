@@ -14,6 +14,7 @@ import com.fishercreative.fishlogger.FishLoggerApp
 import com.fishercreative.fishlogger.data.models.Catch
 import com.fishercreative.fishlogger.data.models.CloudCover
 import com.fishercreative.fishlogger.data.models.WaterTurbidity
+import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -83,6 +84,9 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     
     var fishingDepth by mutableStateOf(0.0)
         private set
+    
+    var retrievalMethod by mutableStateOf(RetrievalMethod.OTHER)
+        private set
 
     fun onScreenShown() {
         resetForm()
@@ -122,7 +126,8 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
                 waterTurbidity = waterTurbidity,
                 waterTemperature = waterTemperature,
                 waterDepth = waterDepth,
-                fishingDepth = fishingDepth
+                fishingDepth = fishingDepth,
+                retrievalMethod = retrievalMethod
             )
             
             Log.d(TAG, "Catch data prepared, saving to local database...")
@@ -218,6 +223,10 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         fishingDepth = depth
     }
 
+    fun updateRetrievalMethod(method: RetrievalMethod) {
+        retrievalMethod = method
+    }
+
     private fun resetForm() {
         date = LocalDate.now()
         time = LocalTime.now()
@@ -236,6 +245,7 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         waterTemperature = 0.0
         waterDepth = 0.0
         fishingDepth = 0.0
+        retrievalMethod = RetrievalMethod.OTHER
     }
 
     private fun updateNearestCityFromLocation(location: Location) {

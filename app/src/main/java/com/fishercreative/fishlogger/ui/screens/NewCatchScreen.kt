@@ -21,6 +21,8 @@ import androidx.core.content.ContextCompat
 import com.fishercreative.fishlogger.data.Constants
 import com.fishercreative.fishlogger.data.models.CloudCover
 import com.fishercreative.fishlogger.data.models.WaterTurbidity
+import com.fishercreative.fishlogger.data.models.Catch
+import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import com.fishercreative.fishlogger.ui.viewmodels.NewCatchViewModel
 import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.LaunchedEffect
@@ -93,6 +95,7 @@ fun NewCatchScreen(
     var baitTypeExpanded by remember { mutableStateOf(false) }
     var baitColorExpanded by remember { mutableStateOf(false) }
     var turbidityExpanded by remember { mutableStateOf(false) }
+    var retrievalMethodExpanded by remember { mutableStateOf(false) }
 
     // Filtered lists
     val filteredSpecies = remember(viewModel.species) {
@@ -425,27 +428,54 @@ fun NewCatchScreen(
             onExpandedChange = { turbidityExpanded = it }
         ) {
             OutlinedTextField(
-                value = viewModel.waterTurbidity.name.replace("_", " "),
+                value = viewModel.waterTurbidity.toString(),
                 onValueChange = { },
-                label = { Text("Water Turbidity") },
                 readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
+                label = { Text("Water Turbidity") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = turbidityExpanded) },
-                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
-                singleLine = true
+                modifier = Modifier.fillMaxWidth().menuAnchor()
             )
+
             ExposedDropdownMenu(
                 expanded = turbidityExpanded,
                 onDismissRequest = { turbidityExpanded = false }
             ) {
                 WaterTurbidity.values().forEach { turbidity ->
                     DropdownMenuItem(
-                        text = { Text(turbidity.name.replace("_", " ")) },
+                        text = { Text(turbidity.toString()) },
                         onClick = {
                             viewModel.updateWaterTurbidity(turbidity)
                             turbidityExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // Retrieval Method Dropdown
+        ExposedDropdownMenuBox(
+            expanded = retrievalMethodExpanded,
+            onExpandedChange = { retrievalMethodExpanded = it }
+        ) {
+            OutlinedTextField(
+                value = viewModel.retrievalMethod.toString(),
+                onValueChange = { },
+                readOnly = true,
+                label = { Text("Retrieval Method") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = retrievalMethodExpanded) },
+                modifier = Modifier.fillMaxWidth().menuAnchor()
+            )
+
+            ExposedDropdownMenu(
+                expanded = retrievalMethodExpanded,
+                onDismissRequest = { retrievalMethodExpanded = false }
+            ) {
+                RetrievalMethod.values().forEach { method ->
+                    DropdownMenuItem(
+                        text = { Text(method.toString()) },
+                        onClick = {
+                            viewModel.updateRetrievalMethod(method)
+                            retrievalMethodExpanded = false
                         }
                     )
                 }

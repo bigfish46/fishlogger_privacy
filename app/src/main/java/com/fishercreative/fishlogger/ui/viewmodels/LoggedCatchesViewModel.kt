@@ -60,12 +60,14 @@ class LoggedCatchesViewModel(application: Application) : AndroidViewModel(applic
                     catch.species.lowercase().contains(query) ||
                     catch.waterBody.lowercase().contains(query) ||
                     catch.baitType.lowercase().contains(query) ||
-                    catch.baitColor.lowercase().contains(query)
+                    catch.baitColor.lowercase().contains(query) ||
+                    catch.retrievalMethod.toString().lowercase().contains(query)
                 }
                 SearchFilter.SPECIES -> catch.species.lowercase().contains(query)
                 SearchFilter.WATER_BODY -> catch.waterBody.lowercase().contains(query)
                 SearchFilter.BAIT_TYPE -> catch.baitType.lowercase().contains(query)
                 SearchFilter.BAIT_COLOR -> catch.baitColor.lowercase().contains(query)
+                SearchFilter.RETRIEVAL_METHOD -> catch.retrievalMethod.toString().lowercase().contains(query)
             }
         }
     }
@@ -92,7 +94,8 @@ enum class SearchFilter {
     SPECIES,
     WATER_BODY,
     BAIT_TYPE,
-    BAIT_COLOR;
+    BAIT_COLOR,
+    RETRIEVAL_METHOD;
 
     override fun toString(): String {
         return when (this) {
@@ -101,6 +104,7 @@ enum class SearchFilter {
             WATER_BODY -> "Water Body"
             BAIT_TYPE -> "Bait Type"
             BAIT_COLOR -> "Bait Color"
+            RETRIEVAL_METHOD -> "Retrieval Method"
         }
     }
 } 

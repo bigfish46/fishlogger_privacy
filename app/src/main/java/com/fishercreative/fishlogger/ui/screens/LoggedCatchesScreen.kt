@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fishercreative.fishlogger.data.models.Catch
+import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import com.fishercreative.fishlogger.ui.viewmodels.LoggedCatchesViewModel
 import com.fishercreative.fishlogger.ui.viewmodels.SearchFilter
 import java.time.format.DateTimeFormatter
@@ -309,24 +311,17 @@ fun LoggedCatchesScreen(
                                                 }
                                             }
                                         }
-                                        if (catch.waterDepth > 0 || catch.fishingDepth > 0) {
+
+                                        if (catch.retrievalMethod != RetrievalMethod.OTHER) {
                                             Column(modifier = Modifier.weight(1f)) {
-                                                if (catch.waterDepth > 0) {
-                                                    Text(
-                                                        text = "Water depth: ${catch.waterDepth}ft",
-                                                        style = MaterialTheme.typography.bodySmall.copy(
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                    )
-                                                }
-                                                if (catch.fishingDepth > 0) {
-                                                    Text(
-                                                        text = "Fishing depth: ${catch.fishingDepth}ft",
-                                                        style = MaterialTheme.typography.bodySmall.copy(
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                    )
-                                                }
+                                                Text(
+                                                    text = "Method: ${catch.retrievalMethod}",
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    ),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
                                             }
                                         }
                                     }
