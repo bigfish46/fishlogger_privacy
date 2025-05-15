@@ -1,8 +1,11 @@
 package com.fishercreative.fishlogger.ui.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,11 +19,13 @@ import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import java.time.format.DateTimeFormatter
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import android.net.Uri
 
 @Composable
 fun CatchCard(
     catch: Catch,
-    onClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onImageClick: (Uri) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MM/dd/yyyy") }
@@ -30,18 +35,17 @@ fun CatchCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .animateContentSize(), // Add smooth animation when content size changes
+            .animateContentSize(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        onClick = onClick
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header with Species and Date/Time
+            // Header with Species, Date/Time, and Edit Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -60,19 +64,31 @@ fun CatchCard(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = catch.date.format(dateFormatter),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = catch.date.format(dateFormatter),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
-                    )
-                    Text(
-                        text = catch.time.format(timeFormatter),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            text = catch.time.format(timeFormatter),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
-                    )
+                    }
+                    IconButton(onClick = onEditClick) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit catch",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
@@ -85,7 +101,8 @@ fun CatchCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onImageClick(Uri.parse(uri)) },
                     contentScale = ContentScale.Crop
                 )
             }

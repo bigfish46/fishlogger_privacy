@@ -57,7 +57,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 fun NewCatchScreen(
     viewModel: NewCatchViewModel,
     onRequestLocationPermission: () -> Unit,
-    navController: NavController
+    navController: NavController,
+    buttonText: String = "Save Catch",
+    onButtonClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -583,14 +585,15 @@ fun NewCatchScreen(
 
         Button(
             onClick = { 
-                Log.d("NewCatchScreen", "Save button clicked, isSaving=$isSaving")
                 if (!isSaving) {
-                    Log.d("NewCatchScreen", "Starting save operation")
-                    isSaving = true
-                    Toast.makeText(context, "Saving catch...", Toast.LENGTH_SHORT).show()
-                    viewModel.saveCatch()
-                } else {
-                    Log.d("NewCatchScreen", "Save already in progress")
+                    if (onButtonClick != null) {
+                        onButtonClick()
+                    } else {
+                        Log.d("NewCatchScreen", "Starting save operation")
+                        isSaving = true
+                        Toast.makeText(context, "Saving catch...", Toast.LENGTH_SHORT).show()
+                        viewModel.saveCatch()
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -608,7 +611,7 @@ fun NewCatchScreen(
                     Text("Saving...")
                 }
             } else {
-                Text("Save Catch")
+                Text(buttonText)
             }
         }
     }

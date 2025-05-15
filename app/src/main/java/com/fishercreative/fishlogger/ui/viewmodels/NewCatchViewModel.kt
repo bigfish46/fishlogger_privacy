@@ -24,83 +24,83 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
-class NewCatchViewModel(application: Application) : AndroidViewModel(application) {
+open class NewCatchViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "NewCatchViewModel"
-    private val catchDao = FishLoggerApp.database.catchDao()
+    protected val catchDao = FishLoggerApp.database.catchDao()
     
-    private val _saveResult = MutableSharedFlow<SaveResult>()
+    protected val _saveResult = MutableSharedFlow<SaveResult>()
     val saveResult = _saveResult.asSharedFlow()
 
-    private val _stateValidationResult = MutableSharedFlow<StateValidationResult>()
+    protected val _stateValidationResult = MutableSharedFlow<StateValidationResult>()
     val stateValidationResult = _stateValidationResult.asSharedFlow()
     
     var date by mutableStateOf(LocalDate.now())
-        private set
+        protected set
     
     var time by mutableStateOf(LocalTime.now())
-        private set
+        protected set
     
     var species by mutableStateOf("")
-        private set
+        protected set
     
     var lengthInches by mutableStateOf(0)
-        private set
+        protected set
     
     var weightPounds by mutableStateOf(0)
-        private set
+        protected set
     
     var weightOunces by mutableStateOf(0)
-        private set
+        protected set
     
     var temperature by mutableStateOf(0.0)
-        private set
+        protected set
     
     var cloudCover by mutableStateOf(CloudCover.CLEAR)
-        private set
+        protected set
     
     var location by mutableStateOf<Location?>(null)
-        private set
+        protected set
     
     var city by mutableStateOf("")
-        private set
+        protected set
         
     var state by mutableStateOf("")
-        private set
+        protected set
     
     var stateTemp by mutableStateOf("")
-        private set
+        protected set
     
     var nearestCity by mutableStateOf("")
-        private set
+        protected set
     
     var waterBody by mutableStateOf("")
-        private set
+        protected set
     
     var baitType by mutableStateOf("")
-        private set
+        protected set
     
     var baitColor by mutableStateOf("")
-        private set
+        protected set
     
     var waterTurbidity by mutableStateOf(WaterTurbidity.CLEAR)
-        private set
+        protected set
     
     var waterTemperature by mutableStateOf(0.0)
-        private set
+        protected set
     
     var waterDepth by mutableStateOf(0.0)
-        private set
+        protected set
     
     var fishingDepth by mutableStateOf(0.0)
-        private set
+        protected set
     
     var retrievalMethod by mutableStateOf(RetrievalMethod.OTHER)
-        private set
+        protected set
         
     var photoUri by mutableStateOf<String?>(null)
-        private set
+        protected set
 
-    fun onScreenShown() {
+    open fun onScreenShown() {
         resetForm()
     }
 

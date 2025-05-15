@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,10 +22,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.fishercreative.fishlogger.ui.components.CatchCard
 import com.fishercreative.fishlogger.ui.components.EmptyState
+import com.fishercreative.fishlogger.ui.components.FullScreenImage
 import com.fishercreative.fishlogger.ui.components.LoadingSkeleton
 import com.fishercreative.fishlogger.ui.components.SearchHeader
+import com.fishercreative.fishlogger.ui.navigation.Screen
 import com.fishercreative.fishlogger.ui.viewmodels.ExportResult
 import com.fishercreative.fishlogger.ui.viewmodels.LoggedCatchesViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -35,11 +39,13 @@ import android.widget.Toast
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun LoggedCatchesScreen(
+    navController: NavController,
     viewModel: LoggedCatchesViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = viewModel.isLoading)
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     fun hideKeyboard() {
         val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -94,136 +100,151 @@ fun LoggedCatchesScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        // Header with title and export button
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp)
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            // Header with title and export button
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp)
             ) {
-                Column {
-                    Text(
-                        text = "Logged",
-                        style = MaterialTheme.typography.displaySmall.copy(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                        )
-                    )
-                    Text(
-                        text = "Catches",
-                        style = MaterialTheme.typography.displaySmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    )
-                }
-                
-                FilledTonalButton(
-                    onClick = {
-                        if (!viewModel.hasWritePermission()) {
-                            permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        } else {
-                            viewModel.exportToCsv()
-                        }
-                    },
-                    enabled = viewModel.catches.isNotEmpty(),
-                    modifier = Modifier.padding(top = 8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                    Column {
+                        Text(
+                            text = "Logged",
+                            style = MaterialTheme.typography.displaySmall.copy(
+                                fontWeight = FontWeight.Light,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                            )
                         )
-                        Text("Export Catches")
+                        Text(
+                            text = "Catches",
+                            style = MaterialTheme.typography.displaySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        )
+                    }
+                    
+                    FilledTonalButton(
+                        onClick = {
+                            if (!viewModel.hasWritePermission()) {
+                                permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            } else {
+                                viewModel.exportToCsv()
+                            }
+                        },
+                        enabled = viewModel.catches.isNotEmpty(),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text("Export Catches")
+                        }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Search header
-        SearchHeader(
-            query = viewModel.searchQuery,
-            onQueryChange = { query ->
-                viewModel.updateSearchQuery(query)
-                hideKeyboard()
-            },
-            currentFilter = viewModel.searchFilter,
-            onFilterChange = viewModel::updateSearchFilter,
-            onSearch = { query -> 
-                hideKeyboard()
-                viewModel.updateSearchQuery(query)
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+            // Search header
+            SearchHeader(
+                query = viewModel.searchQuery,
+                onQueryChange = { query ->
+                    viewModel.updateSearchQuery(query)
+                    hideKeyboard()
+                },
+                currentFilter = viewModel.searchFilter,
+                onFilterChange = viewModel::updateSearchFilter,
+                onSearch = { query -> 
+                    hideKeyboard()
+                    viewModel.updateSearchQuery(query)
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        // Content area with pull-to-refresh
-        SwipeRefresh(
-            state = swipeRefreshState,
-            onRefresh = { viewModel.loadCatches() },
-            modifier = Modifier.fillMaxSize()
-        ) {
-            when {
-                viewModel.isLoading -> {
-                    LoadingSkeleton()
-                }
-                viewModel.error != null -> {
-                    EmptyState(
-                        title = "Oops!",
-                        message = viewModel.error ?: "Something went wrong",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                viewModel.catches.isEmpty() -> {
-                    EmptyState(
-                        title = if (viewModel.searchQuery.isBlank()) "No Catches Yet" else "No Matches Found",
-                        message = if (viewModel.searchQuery.isBlank()) 
-                            "Start logging your catches to see them here" 
-                        else 
-                            "Try adjusting your search or filter",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                else -> {
-                    AnimatedContent(
-                        targetState = viewModel.catches,
-                        transitionSpec = {
-                            fadeIn() + slideInVertically() with 
-                            fadeOut() + slideOutVertically()
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    ) { catches ->
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(
-                                items = catches,
-                                key = { it.id }
-                            ) { catch ->
-                                CatchCard(
-                                    catch = catch,
-                                    onClick = { /* TODO: Show details */ }
-                                )
+            // Content area with pull-to-refresh
+            SwipeRefresh(
+                state = swipeRefreshState,
+                onRefresh = { viewModel.loadCatches() },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when {
+                    viewModel.isLoading -> {
+                        LoadingSkeleton()
+                    }
+                    viewModel.error != null -> {
+                        EmptyState(
+                            title = "Oops!",
+                            message = viewModel.error ?: "Something went wrong",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    viewModel.catches.isEmpty() -> {
+                        EmptyState(
+                            title = if (viewModel.searchQuery.isBlank()) "No Catches Yet" else "No Matches Found",
+                            message = if (viewModel.searchQuery.isBlank()) 
+                                "Start logging your catches to see them here" 
+                            else 
+                                "Try adjusting your search or filter",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    else -> {
+                        AnimatedContent(
+                            targetState = viewModel.catches,
+                            transitionSpec = {
+                                fadeIn() + slideInVertically() with 
+                                fadeOut() + slideOutVertically()
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        ) { catches ->
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(
+                                    items = catches,
+                                    key = { it.id }
+                                ) { catch ->
+                                    CatchCard(
+                                        catch = catch,
+                                        onEditClick = {
+                                            navController.navigate(Screen.EditCatch.createRoute(catch.id))
+                                        },
+                                        onImageClick = { uri ->
+                                            selectedImageUri = uri
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+
+        // Full screen image overlay
+        selectedImageUri?.let { uri ->
+            FullScreenImage(
+                imageUri = uri,
+                onDismiss = { selectedImageUri = null }
+            )
         }
     }
 } 
