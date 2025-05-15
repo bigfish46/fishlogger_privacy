@@ -3,9 +3,11 @@ package com.fishercreative.fishlogger.ui.screens
 import android.app.Activity
 import android.content.Context
 import android.view.inputmethod.InputMethodManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
@@ -13,14 +15,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fishercreative.fishlogger.ui.viewmodels.LoggedCatchesViewModel
 import com.fishercreative.fishlogger.ui.viewmodels.SearchFilter
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,15 +46,18 @@ fun LoggedCatchesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
         Text(
             text = "Logged Catches",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            ),
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Search Bar
         SearchBar(
             query = viewModel.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
@@ -60,7 +66,10 @@ fun LoggedCatchesScreen(
             onActiveChange = {},
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
+                .padding(bottom = 16.dp),
+            colors = SearchBarDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
             placeholder = { Text("Search catches...") },
             leadingIcon = { 
                 IconButton(onClick = { hideKeyboard() }) {
@@ -120,15 +129,14 @@ fun LoggedCatchesScreen(
                 )
             }
             viewModel.catches.isEmpty() -> {
-                if (viewModel.searchQuery.isBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = "No catches logged yet",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                } else {
-                    Text(
-                        text = "No matches found",
+                        text = if (viewModel.searchQuery.isBlank()) "No catches logged yet" else "No matches found",
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(16.dp)
                     )
@@ -137,11 +145,16 @@ fun LoggedCatchesScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(viewModel.catches) { catch ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp)),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
                             onClick = { /* TODO: Show details */ }
                         ) {
                             Column(
@@ -149,31 +162,42 @@ fun LoggedCatchesScreen(
                                     .fillMaxWidth()
                                     .padding(16.dp)
                             ) {
-                                // Species and Date/Time
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = catch.species,
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = catch.species,
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                color = MaterialTheme.colorScheme.onPrimary,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text(
                                             text = catch.date.format(dateFormatter),
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         )
                                         Text(
                                             text = catch.time.format(timeFormatter),
-                                            style = MaterialTheme.typography.bodySmall
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         )
                                     }
                                 }
                                 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
                                 
-                                // Size and Weight
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -181,25 +205,30 @@ fun LoggedCatchesScreen(
                                     if (catch.lengthInches > 0) {
                                         Text(
                                             text = "Length: ${catch.lengthInches}\"",
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         )
                                     }
                                     if (catch.weightPounds > 0 || catch.weightOunces > 0) {
                                         Text(
                                             text = "Weight: ${catch.weightPounds}lb ${catch.weightOunces}oz",
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         )
                                     }
                                 }
 
-                                // Location Information
                                 if (catch.waterBody.isNotBlank() || catch.nearestCity.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Column {
                                         if (catch.waterBody.isNotBlank()) {
                                             Text(
                                                 text = catch.waterBody,
-                                                style = MaterialTheme.typography.bodyMedium,
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                ),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -207,7 +236,9 @@ fun LoggedCatchesScreen(
                                         if (catch.nearestCity.isNotBlank()) {
                                             Text(
                                                 text = catch.nearestCity,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                ),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -215,7 +246,6 @@ fun LoggedCatchesScreen(
                                     }
                                 }
 
-                                // Environmental Conditions
                                 if (catch.temperature > 0 || catch.waterTemperature > 0 || 
                                     catch.cloudCover != null || catch.waterTurbidity != null) {
                                     Spacer(modifier = Modifier.height(8.dp))
@@ -227,30 +257,29 @@ fun LoggedCatchesScreen(
                                             if (catch.temperature > 0) {
                                                 Text(
                                                     text = "Air: ${catch.temperature}°F",
-                                                    style = MaterialTheme.typography.bodySmall
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
                                                 )
                                             }
                                             if (catch.waterTemperature > 0) {
                                                 Text(
                                                     text = "Water: ${catch.waterTemperature}°F",
-                                                    style = MaterialTheme.typography.bodySmall
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
                                                 )
                                             }
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = catch.cloudCover.toString().replace("_", " "),
-                                                style = MaterialTheme.typography.bodySmall
-                                            )
-                                            Text(
-                                                text = catch.waterTurbidity.toString().replace("_", " "),
+                                                text = "${catch.cloudCover.name.replace("_", " ")} • ${catch.waterTurbidity.name.replace("_", " ")}",
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                         }
                                     }
                                 }
 
-                                // Fishing Details
                                 if (catch.baitType.isNotBlank() || catch.baitColor.isNotBlank() ||
                                     catch.waterDepth > 0 || catch.fishingDepth > 0) {
                                     Spacer(modifier = Modifier.height(8.dp))
@@ -262,14 +291,18 @@ fun LoggedCatchesScreen(
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
                                                     text = "Bait: ${catch.baitType}",
-                                                    style = MaterialTheme.typography.bodySmall,
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    ),
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                                 if (catch.baitColor.isNotBlank()) {
                                                     Text(
                                                         text = "Color: ${catch.baitColor}",
-                                                        style = MaterialTheme.typography.bodySmall,
+                                                        style = MaterialTheme.typography.bodySmall.copy(
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        ),
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis
                                                     )
@@ -281,13 +314,17 @@ fun LoggedCatchesScreen(
                                                 if (catch.waterDepth > 0) {
                                                     Text(
                                                         text = "Water depth: ${catch.waterDepth}ft",
-                                                        style = MaterialTheme.typography.bodySmall
+                                                        style = MaterialTheme.typography.bodySmall.copy(
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
                                                     )
                                                 }
                                                 if (catch.fishingDepth > 0) {
                                                     Text(
                                                         text = "Fishing depth: ${catch.fishingDepth}ft",
-                                                        style = MaterialTheme.typography.bodySmall
+                                                        style = MaterialTheme.typography.bodySmall.copy(
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
                                                     )
                                                 }
                                             }

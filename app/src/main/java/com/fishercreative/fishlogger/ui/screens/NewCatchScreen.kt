@@ -42,6 +42,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.CoroutineScope
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.platform.LocalFocusManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,7 +55,11 @@ fun NewCatchScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     var isSaving by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    fun hideKeyboard() {
+        focusManager.clearFocus()
+    }
 
     // Call onScreenShown when the screen is shown
     LaunchedEffect(Unit) {
@@ -177,7 +183,9 @@ fun NewCatchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = speciesExpanded) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = speciesExpanded) },
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
             ExposedDropdownMenu(
                 expanded = speciesExpanded,
@@ -207,7 +215,9 @@ fun NewCatchScreen(
                 },
                 label = { Text("Length (inches)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
 
             OutlinedTextField(
@@ -217,7 +227,9 @@ fun NewCatchScreen(
                 },
                 label = { Text("Weight (lbs)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
 
             OutlinedTextField(
@@ -227,7 +239,9 @@ fun NewCatchScreen(
                 },
                 label = { Text("Weight (oz)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
         }
 
@@ -243,7 +257,9 @@ fun NewCatchScreen(
                 },
                 label = { Text("Temperature (°F)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
 
             ExposedDropdownMenuBox(
@@ -257,7 +273,9 @@ fun NewCatchScreen(
                     label = { Text("Cloud Cover") },
                     readOnly = true,
                     modifier = Modifier.menuAnchor(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cloudCoverExpanded) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cloudCoverExpanded) },
+                    keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                    singleLine = true
                 )
                 ExposedDropdownMenu(
                     expanded = cloudCoverExpanded,
@@ -314,7 +332,9 @@ fun NewCatchScreen(
             value = viewModel.nearestCity,
             onValueChange = { viewModel.updateNearestCity(it) },
             label = { Text("Nearest City") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+            singleLine = true
         )
 
         // Water Body
@@ -322,7 +342,9 @@ fun NewCatchScreen(
             value = viewModel.waterBody,
             onValueChange = { viewModel.updateWaterBody(it) },
             label = { Text("Water Body") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+            singleLine = true
         )
 
         // Bait Type and Color Dropdowns
@@ -343,7 +365,9 @@ fun NewCatchScreen(
                     },
                     label = { Text("Bait Type") },
                     modifier = Modifier.menuAnchor(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = baitTypeExpanded) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = baitTypeExpanded) },
+                    keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                    singleLine = true
                 )
                 ExposedDropdownMenu(
                     expanded = baitTypeExpanded,
@@ -374,7 +398,9 @@ fun NewCatchScreen(
                     },
                     label = { Text("Bait Color") },
                     modifier = Modifier.menuAnchor(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = baitColorExpanded) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = baitColorExpanded) },
+                    keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                    singleLine = true
                 )
                 ExposedDropdownMenu(
                     expanded = baitColorExpanded,
@@ -406,7 +432,9 @@ fun NewCatchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = turbidityExpanded) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = turbidityExpanded) },
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
             ExposedDropdownMenu(
                 expanded = turbidityExpanded,
@@ -435,7 +463,9 @@ fun NewCatchScreen(
                 },
                 label = { Text("Water Temp (°F)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
 
             OutlinedTextField(
@@ -445,7 +475,9 @@ fun NewCatchScreen(
                 },
                 label = { Text("Water Depth (ft)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
 
             OutlinedTextField(
@@ -455,7 +487,9 @@ fun NewCatchScreen(
                 },
                 label = { Text("Fishing Depth (ft)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                keyboardActions = KeyboardActions(onDone = { hideKeyboard() }),
+                singleLine = true
             )
         }
 

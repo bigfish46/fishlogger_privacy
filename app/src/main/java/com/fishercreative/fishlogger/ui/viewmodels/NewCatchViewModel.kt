@@ -3,6 +3,7 @@ package com.fishercreative.fishlogger.ui.viewmodels
 import android.app.Application
 import android.location.Location
 import android.location.Geocoder
+import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -182,26 +183,7 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
     fun updateLocation(newLocation: Location) {
         location = newLocation
         // Update nearest city using Geocoder
-        viewModelScope.launch {
-            try {
-                val geocoder = Geocoder(getApplication())
-                val addresses = geocoder.getFromLocation(newLocation.latitude, newLocation.longitude, 1)
-                if (!addresses.isNullOrEmpty()) {
-                    val address = addresses[0]
-                    val city = address.locality ?: address.subAdminArea
-                    val state = address.adminArea
-                    nearestCity = when {
-                        city != null && state != null -> "$city, $state"
-                        city != null -> city
-                        state != null -> state
-                        else -> ""
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error getting nearest city", e)
-                nearestCity = ""
-            }
-        }
+        updateNearestCityFromLocation(newLocation)
     }
 
     fun updateNearestCity(city: String) {
@@ -254,5 +236,28 @@ class NewCatchViewModel(application: Application) : AndroidViewModel(application
         waterTemperature = 0.0
         waterDepth = 0.0
         fishingDepth = 0.0
+    }
+
+    private fun updateNearestCityFromLocation(location: Location) {
+        val geocoder = Geocoder(getApplication())
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                geocoder.getFromLocation(location.latitude, location.longitude, 1) { addresses ->
+                    if (addresses.isNotEmpty()) {
+                        val address = addresses[0]
+                        nearestCity = address.locality ?: address.subAdminArea ?: ""
+                    }
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                if (addresses?.isNotEmpty() == true) {
+                    val address = addresses[0]
+                    nearestCity = address.locality ?: address.subAdminArea ?: ""
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("NewCatchViewModel", "Error getting location address", e)
+        }
     }
 } 
