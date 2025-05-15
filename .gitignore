@@ -20,3 +20,6 @@ app/build/
 
 # Keep Room schema files
 !app/schemas/
+
+secrets.properties
+local.defaults.properties

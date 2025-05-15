@@ -6,4 +6,6 @@ sealed class Screen(val route: String) {
     object EditCatch : Screen("edit_catch/{catchId}") {
         fun createRoute(catchId: String) = "edit_catch/$catchId"
     }
+    object CatchMap : Screen("catch_map")
+    object Settings : Screen("settings")
 } 

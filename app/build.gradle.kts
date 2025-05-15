@@ -2,14 +2,22 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.google.gms.google.services)
-    alias(libs.plugins.google.firebase.crashlytics)
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+    id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.fishercreative.fishlogger"
     compileSdk = 34
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("../fishlogger.keystore")
+            storePassword = "fishlogger123"
+            keyAlias = "fishlogger"
+            keyPassword = "fishlogger123"
+        }
+    }
 
     defaultConfig {
         applicationId = "com.fishercreative.fishlogger"
@@ -131,6 +139,18 @@ dependencies {
 
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Google Maps Compose
+    implementation("com.google.maps.android:maps-compose:2.15.0")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    
+    // Google Sign In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

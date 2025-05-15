@@ -10,16 +10,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,9 +27,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.fishercreative.fishlogger.ui.navigation.Screen
-import com.fishercreative.fishlogger.ui.screens.LoggedCatchesScreen
-import com.fishercreative.fishlogger.ui.screens.NewCatchScreen
-import com.fishercreative.fishlogger.ui.screens.EditCatchScreen
+import com.fishercreative.fishlogger.ui.screens.*
 import com.fishercreative.fishlogger.ui.theme.FishLoggerTheme
 import com.fishercreative.fishlogger.ui.theme.SilverLight
 import com.fishercreative.fishlogger.ui.theme.SilverMid
@@ -92,29 +89,55 @@ private fun MainScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Fish Logger") }
+                title = { Text("Fish Logger") },
+                actions = {
+                    IconButton(
+                        onClick = { 
+                            navController.navigate(Screen.Settings.route) {
+                                launchSingleTop = true
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = if (currentRoute == Screen.Settings.route)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                SilverMid
+                        )
+                    }
+                }
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = SilverLight,
+                contentColor = Color.Black
+            ) {
                 NavigationBarItem(
                     icon = { 
                         Icon(
-                            Icons.Default.List, 
+                            imageVector = Icons.Default.List,
                             contentDescription = "Logged Catches",
                             tint = if (currentRoute == Screen.LoggedCatches.route) 
-                                MaterialTheme.colorScheme.primary 
+                                MaterialTheme.colorScheme.error 
                             else 
-                                Color.Black
+                                Color.Black,
+                            modifier = Modifier.size(if (currentRoute == Screen.LoggedCatches.route) 28.dp else 24.dp)
                         ) 
                     },
                     label = { 
                         Text(
                             "Catches",
                             color = if (currentRoute == Screen.LoggedCatches.route) 
-                                MaterialTheme.colorScheme.primary 
+                                MaterialTheme.colorScheme.error 
                             else 
-                                Color.Black
+                                Color.Black,
+                            style = if (currentRoute == Screen.LoggedCatches.route)
+                                MaterialTheme.typography.labelLarge
+                            else
+                                MaterialTheme.typography.labelMedium
                         ) 
                     },
                     selected = currentRoute == Screen.LoggedCatches.route,
@@ -128,26 +151,38 @@ private fun MainScreen(
                                 restoreState = true
                             }
                         }
-                    }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.error,
+                        selectedTextColor = MaterialTheme.colorScheme.error,
+                        indicatorColor = SilverLight,
+                        unselectedIconColor = Color.Black,
+                        unselectedTextColor = Color.Black
+                    )
                 )
                 NavigationBarItem(
                     icon = { 
                         Icon(
-                            Icons.Default.Add, 
+                            imageVector = Icons.Default.Add,
                             contentDescription = "New Catch",
                             tint = if (currentRoute == Screen.NewCatch.route) 
-                                MaterialTheme.colorScheme.primary 
+                                MaterialTheme.colorScheme.error 
                             else 
-                                Color.Black
+                                Color.Black,
+                            modifier = Modifier.size(if (currentRoute == Screen.NewCatch.route) 28.dp else 24.dp)
                         ) 
                     },
                     label = { 
                         Text(
                             "New",
                             color = if (currentRoute == Screen.NewCatch.route) 
-                                MaterialTheme.colorScheme.primary 
+                                MaterialTheme.colorScheme.error 
                             else 
-                                Color.Black
+                                Color.Black,
+                            style = if (currentRoute == Screen.NewCatch.route)
+                                MaterialTheme.typography.labelLarge
+                            else
+                                MaterialTheme.typography.labelMedium
                         ) 
                     },
                     selected = currentRoute == Screen.NewCatch.route,
@@ -161,7 +196,59 @@ private fun MainScreen(
                                 restoreState = true
                             }
                         }
-                    }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.error,
+                        selectedTextColor = MaterialTheme.colorScheme.error,
+                        indicatorColor = SilverLight,
+                        unselectedIconColor = Color.Black,
+                        unselectedTextColor = Color.Black
+                    )
+                )
+                NavigationBarItem(
+                    icon = { 
+                        Icon(
+                            imageVector = Icons.Default.Place,
+                            contentDescription = "Map View",
+                            tint = if (currentRoute == Screen.CatchMap.route) 
+                                MaterialTheme.colorScheme.error 
+                            else 
+                                Color.Black,
+                            modifier = Modifier.size(if (currentRoute == Screen.CatchMap.route) 28.dp else 24.dp)
+                        ) 
+                    },
+                    label = { 
+                        Text(
+                            "Map",
+                            color = if (currentRoute == Screen.CatchMap.route) 
+                                MaterialTheme.colorScheme.error 
+                            else 
+                                Color.Black,
+                            style = if (currentRoute == Screen.CatchMap.route)
+                                MaterialTheme.typography.labelLarge
+                            else
+                                MaterialTheme.typography.labelMedium
+                        ) 
+                    },
+                    selected = currentRoute == Screen.CatchMap.route,
+                    onClick = { 
+                        if (currentRoute != Screen.CatchMap.route) {
+                            navController.navigate(Screen.CatchMap.route) {
+                                popUpTo(Screen.LoggedCatches.route) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.error,
+                        selectedTextColor = MaterialTheme.colorScheme.error,
+                        indicatorColor = SilverLight,
+                        unselectedIconColor = Color.Black,
+                        unselectedTextColor = Color.Black
+                    )
                 )
             }
         }
@@ -193,6 +280,12 @@ private fun MainScreen(
                     onRequestLocationPermission = onRequestLocationPermission,
                     navController = navController
                 )
+            }
+            composable(Screen.CatchMap.route) {
+                MapScreen(navController = navController)
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen(navController = navController)
             }
         }
     }
