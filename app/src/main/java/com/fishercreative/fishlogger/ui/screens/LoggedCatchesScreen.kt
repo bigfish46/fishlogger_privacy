@@ -1,8 +1,11 @@
 package com.fishercreative.fishlogger.ui.screens
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.view.inputmethod.InputMethodManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +29,11 @@ import com.fishercreative.fishlogger.data.models.Catch
 import com.fishercreative.fishlogger.data.models.RetrievalMethod
 import com.fishercreative.fishlogger.ui.viewmodels.LoggedCatchesViewModel
 import com.fishercreative.fishlogger.ui.viewmodels.SearchFilter
+import com.fishercreative.fishlogger.ui.viewmodels.ExportResult
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
+import android.widget.Toast
+import android.content.Intent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +44,7 @@ fun LoggedCatchesScreen(
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var showFilterMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     fun hideKeyboard() {
         val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -45,20 +54,83 @@ fun LoggedCatchesScreen(
         }
     }
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.exportToCsv()
+        } else {
+            Toast.makeText(
+                context,
+                "Storage permission is required to export catches",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.exportResult.collect { result ->
+            when (result) {
+                is ExportResult.Success -> {
+                    Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                }
+                is ExportResult.Error -> {
+                    Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.openFileEvent.collect { uri ->
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "text/csv")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            try {
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    context,
+                    "No app found to open CSV files. The file is saved in your Downloads folder.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        Text(
-            text = "Logged Catches",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Logged Catches",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            
+            Button(
+                onClick = {
+                    if (!viewModel.hasWritePermission()) {
+                        permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    } else {
+                        viewModel.exportToCsv()
+                    }
+                },
+                enabled = viewModel.catches.isNotEmpty()
+            ) {
+                Text("Download CSV")
+            }
+        }
 
         SearchBar(
             query = viewModel.searchQuery,
@@ -325,6 +397,7 @@ fun LoggedCatchesScreen(
                                             }
                                         }
                                     }
+
                                 }
                             }
                         }

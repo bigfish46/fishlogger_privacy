@@ -1,17 +1,27 @@
 package com.fishercreative.fishlogger.ui.viewmodels
 
+import android.Manifest
 import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.fishercreative.fishlogger.FishLoggerApp
 import com.fishercreative.fishlogger.data.models.Catch
+import com.fishercreative.fishlogger.utils.CsvExporter
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class LoggedCatchesViewModel(application: Application) : AndroidViewModel(application) {
     private val catchDao = FishLoggerApp.database.catchDao()
@@ -32,6 +42,12 @@ class LoggedCatchesViewModel(application: Application) : AndroidViewModel(applic
         private set
 
     private var allCatches = listOf<Catch>()
+
+    private val _exportResult = MutableSharedFlow<ExportResult>()
+    val exportResult = _exportResult.asSharedFlow()
+
+    private val _openFileEvent = MutableSharedFlow<Uri>()
+    val openFileEvent = _openFileEvent.asSharedFlow()
     
     init {
         loadCatches()
@@ -45,6 +61,43 @@ class LoggedCatchesViewModel(application: Application) : AndroidViewModel(applic
     fun updateSearchFilter(filter: SearchFilter) {
         searchFilter = filter
         filterCatches()
+    }
+
+    fun hasWritePermission(): Boolean {
+        // On Android 10 (Q) and above, we don't need WRITE_EXTERNAL_STORAGE permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return true
+        }
+        return ContextCompat.checkSelfPermission(
+            getApplication(),
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun exportToCsv() {
+        if (!hasWritePermission()) {
+            viewModelScope.launch {
+                _exportResult.emit(ExportResult.Error("Storage permission required to export catches"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                if (catches.isEmpty()) {
+                    _exportResult.emit(ExportResult.Error("No catches to export"))
+                    return@launch
+                }
+
+                val result = CsvExporter.exportCatches(getApplication(), catches)
+                _exportResult.emit(ExportResult.Success("CSV file saved to Downloads folder"))
+                
+                // Emit event to open the file
+                _openFileEvent.emit(result.uri)
+            } catch (e: Exception) {
+                _exportResult.emit(ExportResult.Error("Failed to export catches: ${e.message}"))
+            }
+        }
     }
     
     private fun filterCatches() {
@@ -107,4 +160,9 @@ enum class SearchFilter {
             RETRIEVAL_METHOD -> "Retrieval Method"
         }
     }
+}
+
+sealed class ExportResult {
+    data class Success(val message: String) : ExportResult()
+    data class Error(val message: String) : ExportResult()
 } 
