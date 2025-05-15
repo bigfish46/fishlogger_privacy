@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -17,6 +18,9 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -25,6 +29,9 @@ import com.fishercreative.fishlogger.ui.navigation.Screen
 import com.fishercreative.fishlogger.ui.screens.LoggedCatchesScreen
 import com.fishercreative.fishlogger.ui.screens.NewCatchScreen
 import com.fishercreative.fishlogger.ui.theme.FishLoggerTheme
+import com.fishercreative.fishlogger.ui.theme.SilverLight
+import com.fishercreative.fishlogger.ui.theme.SilverMid
+import com.fishercreative.fishlogger.ui.theme.SilverDark
 import com.fishercreative.fishlogger.ui.viewmodels.NewCatchViewModel
 import com.google.android.gms.location.*
 
@@ -84,39 +91,89 @@ private fun MainScreen(
             )
         },
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.List, contentDescription = "Logged Catches") },
-                    label = { Text("Catches") },
-                    selected = currentRoute == Screen.LoggedCatches.route,
-                    onClick = { 
-                        if (currentRoute != Screen.LoggedCatches.route) {
-                            navController.navigate(Screen.LoggedCatches.route) {
-                                popUpTo(Screen.LoggedCatches.route) {
-                                    saveState = true
+            Surface(
+                tonalElevation = 3.dp,
+                shadowElevation = 3.dp
+            ) {
+                NavigationBar(
+                    modifier = Modifier.background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                SilverLight,
+                                SilverMid,
+                                SilverDark
+                            )
+                        )
+                    ),
+                    containerColor = Color.Transparent
+                ) {
+                    NavigationBarItem(
+                        icon = { 
+                            Icon(
+                                Icons.Default.List, 
+                                contentDescription = "Logged Catches",
+                                tint = if (currentRoute == Screen.LoggedCatches.route) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    Color.Black
+                            ) 
+                        },
+                        label = { 
+                            Text(
+                                "Catches",
+                                color = if (currentRoute == Screen.LoggedCatches.route) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    Color.Black
+                            ) 
+                        },
+                        selected = currentRoute == Screen.LoggedCatches.route,
+                        onClick = { 
+                            if (currentRoute != Screen.LoggedCatches.route) {
+                                navController.navigate(Screen.LoggedCatches.route) {
+                                    popUpTo(Screen.LoggedCatches.route) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         }
-                    }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Add, contentDescription = "New Catch") },
-                    label = { Text("New") },
-                    selected = currentRoute == Screen.NewCatch.route,
-                    onClick = { 
-                        if (currentRoute != Screen.NewCatch.route) {
-                            navController.navigate(Screen.NewCatch.route) {
-                                popUpTo(Screen.LoggedCatches.route) {
-                                    saveState = true
+                    )
+                    NavigationBarItem(
+                        icon = { 
+                            Icon(
+                                Icons.Default.Add, 
+                                contentDescription = "New Catch",
+                                tint = if (currentRoute == Screen.NewCatch.route) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    Color.Black
+                            ) 
+                        },
+                        label = { 
+                            Text(
+                                "New",
+                                color = if (currentRoute == Screen.NewCatch.route) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    Color.Black
+                            ) 
+                        },
+                        selected = currentRoute == Screen.NewCatch.route,
+                        onClick = { 
+                            if (currentRoute != Screen.NewCatch.route) {
+                                navController.navigate(Screen.NewCatch.route) {
+                                    popUpTo(Screen.LoggedCatches.route) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     ) { innerPadding ->

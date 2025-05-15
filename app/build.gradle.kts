@@ -107,6 +107,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
+    // Material Icons Extended
+    implementation("androidx.compose.material:material-icons-extended:1.6.1")
+    
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
@@ -122,6 +125,9 @@ dependencies {
     
     // Location services
     implementation("com.google.android.gms:play-services-location:21.1.0")
+
+    // Accompanist
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
