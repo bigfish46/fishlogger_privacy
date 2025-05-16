@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+        
+      - name: Build Release Bundle
+        run: ./gradlew bundleRelease
+        env:
+          CURSORAI: ${{ secrets.CURSORAI }}
+        
+      - name: Create keystore file
+        run: |
+          echo "${{ secrets.CURSORAI }}" > keystore.jks.base64
+          base64 -d keystore.jks.base64 > app/fishlogger.keystore
+          
+      - name: Sign Release Bundle
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.CURSORAI }}
+          alias: "fishlogger"
+          keyStorePassword: "fishlogger123"
+          keyPassword: "fishlogger123"
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: app/build/outputs/bundle/release/app-release.aab
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          body_path: CHANGELOG.md 
